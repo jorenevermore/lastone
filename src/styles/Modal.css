@@ -1,0 +1,47 @@
+/* Modal.css */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: none;
+}
+
+.modal-title {
+  font-weight: bold;
+  color: #343a40;
+}
+
+.btn-primary {
+  margin-top: 2.5%;
+  background-color: #795548; 
+  border-color: #795548; 
+  color: white; 
+}
+
+
+.btn-primary:hover {
+  background-color: #5d4037; 
+  border-color: #5d4037; 
+  color: white; 
+}
+
+
+.btn-primary:focus, .btn-primary.focus {
+  box-shadow: none; 
+}
+
+
+.btn-primary:active {
+  background-color: #4e342e; 
+  border-color: #4e342e;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+.input-group-text {
+  cursor: pointer;
+}
+
+.text-danger, .text-success {
+  font-weight: 500;
+}

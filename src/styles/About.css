@@ -1,0 +1,164 @@
+.about-container {
+  width: 100%;
+  background-color: #1d1d1d;
+  padding: 60px 10%;
+}
+
+/* Why We Exist Section */
+.about-section {
+  padding: 40px 0;
+}
+
+.about-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.about-image img:hover {
+  transform: scale(1.05);
+}
+
+.about-title {
+  font-size: 2.6rem;
+  font-weight: 600;
+  color: #f2f2f2;
+  margin-bottom: 15px;
+}
+
+.about-text {
+  font-size: 1.2rem;
+  line-height: 1.7;
+  color: #d1d1d1;
+  margin-bottom: 10px;
+  max-width: 90%;
+}
+
+/* Connect Barber Section */
+.connect-barber-section {
+  position: relative;
+  margin: 60px 0;
+  height: 80vh;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.connect-barber-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(65%);
+}
+
+.connect-barber-overlay {
+  background-color: rgba(0, 0, 0, 0.65);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0 5%;
+}
+
+.connect-barber-content {
+  color: #fff;
+  max-width: 600px;
+  text-align: center;
+}
+
+.connect-barber-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.connect-barber-text {
+  font-size: 1.4rem;
+  line-height: 1.8;
+}
+
+/* Meet Our Team Section */
+.team-section {
+  background-color: #1d1d1d;
+  padding: 60px 0;
+}
+
+.team-title {
+  font-size: 2.4rem;
+  font-weight: 600;
+  color: #f2f2f2;
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.team-member {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.team-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-image {
+  width: 100%;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.team-image-wrapper:hover .team-image {
+  transform: scale(1.05);
+}
+
+.team-name {
+  font-size: 1.6rem;
+  color: #f2f2f2;
+  margin-top: 20px;
+}
+
+.team-role {
+  color: #d1d1d1;
+  font-size: 1.3rem;
+  font-style: italic;
+}
+
+.team-image-wrapper:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive Design Adjustments */
+@media (max-width: 768px) {
+  .connect-barber-title {
+    font-size: 2.2rem;
+  }
+
+  .connect-barber-text {
+    font-size: 1.2rem;
+  }
+
+  .about-container {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+  .team-title {
+    font-size: 2rem;
+  }
+
+  .team-name {
+    font-size: 1.4rem;
+  }
+
+  .team-role {
+    font-size: 1.1rem;
+  }
+}

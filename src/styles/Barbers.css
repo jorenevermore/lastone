@@ -1,0 +1,24 @@
+/* Custom styles for Barbers component */
+
+.container {
+  max-width: 100%;
+  margin-top: 10%;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
