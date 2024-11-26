@@ -1,6 +1,9 @@
+// firebase.js
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, GeoPoint } from 'firebase/firestore'; // Updated import for v9+ Firestore
+import { getStorage } from 'firebase/storage';
+import * as geofire from 'geofire-common'; // geofire-common import
 
 // Firebase config
 const firebaseConfig = {
@@ -21,6 +24,10 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Initialize Firestore
-const db = getFirestore(app);
+const db = getFirestore(app); // Use Firestore v9+
 
-export { auth, googleProvider, db };
+// Initialize Firebase Storage
+const storage = getStorage(app);
+
+// Export Firebase services and geofire
+export { auth, googleProvider, db, storage, geofire, GeoPoint, collection, doc, setDoc };

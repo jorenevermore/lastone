@@ -1,9 +1,10 @@
+// Navbar.js
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../App.css';
 import '../styles/Navbar.css';
 
-const Navbar = ({ onLoginClick, isLoggedIn, onLogoutClick }) => {
+const Navbar = ({ onLoginClick }) => { // Removed isLoggedIn and onLogoutClick
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const Navbar = ({ onLoginClick, isLoggedIn, onLogoutClick }) => {
 
   const handleLogoClick = (e) => {
     e.preventDefault();
-    navigate(isLoggedIn ? '/dashboard' : '/');
+    navigate('/');
   };
 
   return (
@@ -35,23 +36,17 @@ const Navbar = ({ onLoginClick, isLoggedIn, onLogoutClick }) => {
             </Link>
           </div>
           <div className="navbar-center">
-            {!isLoggedIn && (
-              <ul className="navbar-nav d-flex flex-row">
-                <li className="nav-item">
-                  <Link className="nav-link" to="/about">About Us</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/contact">Contact</Link>
-                </li>
-              </ul>
-            )}
+            <ul className="navbar-nav d-flex flex-row">
+              <li className="nav-item">
+                <Link className="nav-link" to="/about">About Us</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/contact">Contact</Link>
+              </li>
+            </ul>
           </div>
           <div className="navbar-right">
-            {!isLoggedIn ? (
-              <button className="btn btn-outline-light" onClick={onLoginClick}>LOGIN</button>
-            ) : (
-              <button className="btn btn-outline-light" onClick={onLogoutClick}>LOGOUT</button>
-            )}
+            <button className="btn btn-outline-light" onClick={onLoginClick}>LOGIN</button>
           </div>
         </div>
       </div>

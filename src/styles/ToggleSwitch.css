@@ -1,0 +1,57 @@
+/* ToggleSwitch.css */
+.toggle-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .toggle-button {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    background-color: #ccc; /* Background color when off */
+    border-radius: 34px; /* Rounded corners */
+    padding: 5px; /* Padding around the toggle */
+    transition: background-color 0.3s ease; /* Smooth transition */
+    position: relative; /* For the inner circle positioning */
+    width: 60px; /* Width of the toggle */
+    height: 34px; /* Height of the toggle */
+  }
+  
+  .toggle-button.active {
+    background-color: #464646; /* Background color when on */
+  }
+  
+  .toggle-circle {
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 5px; /* Positioning for the circle */
+    width: 26px; /* Circle width */
+    height: 26px; /* Circle height */
+    background-color: white; /* Circle color */
+    border-radius: 50%; /* Make the circle round */
+    transition: transform 0.3s ease; /* Smooth transition */
+    transform: translateY(-50%); /* Center the circle */
+  }
+  
+  .toggle-button.active .toggle-circle {
+    transform: translate(26px, -50%); /* Move the circle to the right */
+  }
+  
+  /* Styles for availability indicator */
+  .availability-indicator {
+    width: 10px; /* Size of the indicator dot */
+    height: 10px; /* Size of the indicator dot */
+    border-radius: 50%; /* Make it circular */
+    margin-left: 10px; /* Space between toggle and dot */
+    background-color: #ccc; /* Default color for unavailable */
+    transition: background-color 0.3s ease; /* Smooth transition */
+  }
+  
+  .availability-indicator.available {
+    background-color: green; /* Color for available */
+  }
+  
+  .availability-indicator.unavailable {
+    background-color: gray; /* Color for unavailable */
+  }
+  

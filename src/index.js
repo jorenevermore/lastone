@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { SessionProvider } from './contexts/SessionHandler'; 
+import './styles/Modal.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

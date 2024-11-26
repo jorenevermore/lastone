@@ -1,0 +1,80 @@
+/* General container for services */
+.services-container {
+  padding: 20px;
+  background-color: #f8f9fa; /* Light background */
+  margin-top: 80px;
+}
+
+/* Header styling */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Styling the service cards */
+.service-card {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+/* Disabled services have a greyed-out appearance */
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Icon button for actions (Edit/Delete) */
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: auto;
+  color: #6c757d;
+}
+
+.icon-btn:hover {
+  color: #495057;
+}
+
+/* Service status badge */
+.badge {
+  margin-top: 10px;
+}
+
+/* Grid item layout */
+.grid-item {
+  margin-bottom: 20px;
+}
+
+/* Modal Image Preview */
+.img-preview {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Responsive layout adjustments */
+@media (max-width: 767px) {
+  .services-container {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .grid-item {
+    margin-bottom: 15px;
+  }
+
+  .service-card {
+    width: 100%;
+  }
+}
