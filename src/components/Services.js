@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Card, Row, Col, Dropdown, Badge } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react'; 
+import { Modal, Button, Form, Card, Row, Col, Dropdown, Badge, Nav } from 'react-bootstrap';
 import { db, auth } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { FaEllipsisV, FaTrash, FaEdit } from 'react-icons/fa';
 import '../styles/Services.css';
@@ -11,35 +11,45 @@ const Services = () => {
   const [services, setServices] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('service');
   const [serviceDetails, setServiceDetails] = useState({
-    name: '',
-    price: '',
-    image: null,
+    id: '',
+    title: '',
+    featuredImage: null,
     previewUrl: null,
     status: 'Available',
   });
-  const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [styleDetails, setStyleDetails] = useState({
+    styleName: '',
+    price: '',
+    featuredImage: null,
+    previewUrl: null,
+    serviceId: '',
+  });
+  const [barbershopId, setBarbershopId] = useState(null);
 
   useEffect(() => {
-    const fetchServices = async (uid) => {
+    const fetchBarbershopAndServices = async (uid) => {
       try {
-        const userDocRef = doc(db, 'users', uid);
-        const servicesCollection = collection(userDocRef, 'services');
-        const servicesSnapshot = await getDocs(servicesCollection);
-        const servicesList = servicesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setServices(servicesList);
+        const barbershopDoc = await getDoc(doc(db, 'barbershops', uid));
+        if (barbershopDoc.exists()) {
+          setBarbershopId(barbershopDoc.id);
+          const servicesArray = Array.isArray(barbershopDoc.data().services)
+            ? barbershopDoc.data().services
+            : [];
+          setServices(servicesArray);
+        } else {
+          console.error('Barbershop not found');
+        }
       } catch (error) {
-        console.error('Error fetching services: ', error);
+        console.error('Error fetching barbershop: ', error);
       }
     };
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        fetchServices(user.uid);
+        fetchBarbershopAndServices(user.uid);
       } else {
         setUserId(null);
         setServices([]);
@@ -49,92 +59,101 @@ const Services = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e, isStyle = false) => {
     const { name, value } = e.target;
-    setServiceDetails({ ...serviceDetails, [name]: value });
+    if (isStyle) {
+      setStyleDetails({ ...styleDetails, [name]: value });
+    } else {
+      setServiceDetails({ ...serviceDetails, [name]: value });
+    }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = (e, isStyle = false) => {
     const file = e.target.files[0];
-    setServiceDetails({ ...serviceDetails, image: file });
+    if (isStyle) {
+      setStyleDetails({ ...styleDetails, featuredImage: file });
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setServiceDetails({ ...serviceDetails, previewUrl: reader.result });
-    };
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setStyleDetails({ ...styleDetails, previewUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setServiceDetails({ ...serviceDetails, featuredImage: file });
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setServiceDetails({ ...serviceDetails, previewUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveService = async () => {
-    if (!userId) return;
+    if (!userId || !barbershopId) return;
 
     try {
-      const userDocRef = doc(db, 'users', userId);
-      const servicesCollection = collection(userDocRef, 'services');
+      const barbershopRef = doc(db, 'barbershops', barbershopId);
 
-      // Check if a new image was uploaded, otherwise use the existing one
-      let serviceData = {
-        name: serviceDetails.name,
-        price: serviceDetails.price,
+      const newService = {
+        id: editing ? serviceDetails.id : `service_${Date.now()}`,
+        title: serviceDetails.title,
         status: serviceDetails.status,
-        image: serviceDetails.previewUrl || serviceDetails.image, // Use existing image if no new one
+        featuredImage: serviceDetails.previewUrl || serviceDetails.featuredImage,
       };
 
-      if (editing) {
-        const serviceDocRef = doc(servicesCollection, selectedServiceId);
-        await updateDoc(serviceDocRef, serviceData);
-        setServices(
-          services.map((service) =>
-            service.id === selectedServiceId ? { ...service, ...serviceData } : service
-          )
-        );
-      } else {
-        const docRef = await addDoc(servicesCollection, serviceData);
-        const newService = { id: docRef.id, ...serviceData };
-        setServices([...services, newService]);
-      }
+      const updatedServices = editing
+        ? services.map((service) => (service.id === serviceDetails.id ? newService : service))
+        : [...services, newService];
 
+      await updateDoc(barbershopRef, { services: updatedServices });
+      setServices(updatedServices);
+      setEditing(false); // Reset editing state
       setShowModal(false);
-      resetForm();
     } catch (error) {
       console.error('Error saving service: ', error);
     }
   };
 
-  const handleDeleteService = async (serviceId) => {
+  const handleSaveStyle = async () => {
+    if (!userId || !barbershopId || !styleDetails.serviceId) return;
+
     try {
-      const userDocRef = doc(db, 'users', userId);
-      const serviceDocRef = doc(userDocRef, 'services', serviceId);
-      await deleteDoc(serviceDocRef);
-      setServices(services.filter((service) => service.id !== serviceId));
+      const styleCollection = collection(db, 'styles');
+      const newStyle = {
+        styleId: `style_${Date.now()}`,
+        styleName: styleDetails.styleName,
+        price: styleDetails.price,
+        featuredImage: styleDetails.previewUrl || styleDetails.featuredImage,
+        serviceId: styleDetails.serviceId,
+        barbershopId,
+      };
+
+      await addDoc(styleCollection, newStyle);
+      setShowModal(false);
     } catch (error) {
-      console.error('Error deleting service: ', error);
+      console.error('Error saving style: ', error);
     }
   };
 
-  const resetForm = () => {
-    setServiceDetails({ name: '', price: '', image: null, previewUrl: null, status: 'Available' });
-    setEditing(false);
-    setSelectedServiceId(null);
-  };
-
-  const handleAddService = () => {
-    resetForm();
-    setShowModal(true);
-  };
-
   const handleEditService = (service) => {
-    setServiceDetails({ ...service, previewUrl: service.image }); // Preserve original image URL
-    setSelectedServiceId(service.id);
-    setEditing(true);
+    setServiceDetails(service);
+    setEditing(true); // Ensure editing state is set
+    setActiveTab('service'); // Default to the Service tab
     setShowModal(true);
   };
+
+  const handleTabChange = (tab) => setActiveTab(tab);
 
   return (
     <div className="services-container">
       <div className="header">
         <h2>Services</h2>
-        <Button variant="primary" onClick={handleAddService}>
+        <Button variant="primary" onClick={() => {
+          setEditing(false);
+          setServiceDetails({ id: '', title: '', featuredImage: null, previewUrl: null, status: 'Available' });
+          setShowModal(true);
+        }}>
           Add Service
         </Button>
       </div>
@@ -142,11 +161,10 @@ const Services = () => {
       <Row className="service-grid">
         {services.map((service) => (
           <Col key={service.id} md={4} className="grid-item">
-            <Card className={`service-card ${service.status === 'Disabled' ? 'disabled' : ''}`}>
-              {service.image && <Card.Img variant="top" src={service.image} />}
+            <Card className={service.status === 'Disabled' ? 'disabled' : ''}>
+              {service.featuredImage && <Card.Img variant="top" src={service.featuredImage} />}
               <Card.Body>
-                <Card.Title>{service.name}</Card.Title>
-                <Card.Text>${service.price}</Card.Text>
+                <Card.Title>{service.title}</Card.Title>
                 <Dropdown align="end">
                   <Dropdown.Toggle as={Button} variant="light" className="icon-btn">
                     <FaEllipsisV />
@@ -155,7 +173,7 @@ const Services = () => {
                     <Dropdown.Item onClick={() => handleEditService(service)}>
                       <FaEdit /> Edit
                     </Dropdown.Item>
-                    <Dropdown.Item onClick={() => handleDeleteService(service.id)} className="text-danger">
+                    <Dropdown.Item className="text-danger">
                       <FaTrash /> Delete
                     </Dropdown.Item>
                   </Dropdown.Menu>
@@ -171,58 +189,110 @@ const Services = () => {
 
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>{editing ? 'Edit Service' : 'Add New Service'}</Modal.Title>
+          <Modal.Title>Add New</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group controlId="name">
-              <Form.Label>Service Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={serviceDetails.name}
-                onChange={handleInputChange}
-                placeholder="Enter service name"
-              />
-            </Form.Group>
+          <Nav variant="tabs" activeKey={activeTab} onSelect={handleTabChange}>
+            <Nav.Item>
+              <Nav.Link eventKey="service">Service</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="style">Style</Nav.Link>
+            </Nav.Item>
+          </Nav>
+          {activeTab === 'service' && (
+            <Form>
+              <Form.Group controlId="title">
+                <Form.Label>Service Title</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="title"
+                  value={serviceDetails.title}
+                  onChange={handleInputChange}
+                  placeholder="Enter service title"
+                />
+              </Form.Group>
 
-            <Form.Group controlId="price">
-              <Form.Label>Service Price</Form.Label>
-              <Form.Control
-                type="number"
-                name="price"
-                value={serviceDetails.price}
-                onChange={handleInputChange}
-                placeholder="Enter service price"
-              />
-            </Form.Group>
+              <Form.Group controlId="status">
+                <Form.Label>Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="status"
+                  value={serviceDetails.status}
+                  onChange={handleInputChange}
+                >
+                  <option>Available</option>
+                  <option>Disabled</option>
+                </Form.Control>
+              </Form.Group>
 
-            <Form.Group controlId="status">
-              <Form.Label>Status</Form.Label>
-              <Form.Control
-                as="select"
-                name="status"
-                value={serviceDetails.status}
-                onChange={handleInputChange}
-              >
-                <option>Available</option>
-                <option>Disabled</option>
-              </Form.Control>
-            </Form.Group>
+              <Form.Group controlId="featuredImage">
+                <Form.Label>Service Image</Form.Label>
+                <Form.Control type="file" onChange={handleImageUpload} />
+              </Form.Group>
 
-            <Form.Group controlId="image">
-              <Form.Label>Service Image</Form.Label>
-              <Form.Control type="file" onChange={handleImageUpload} />
-            </Form.Group>
+              {serviceDetails.previewUrl && (
+                <img src={serviceDetails.previewUrl} alt="Preview" className="img-preview" />
+              )}
+            </Form>
+          )}
+          {activeTab === 'style' && (
+            <Form>
+              <Form.Group controlId="styleName">
+                <Form.Label>Style Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="styleName"
+                  value={styleDetails.styleName}
+                  onChange={(e) => handleInputChange(e, true)}
+                  placeholder="Enter style name"
+                />
+              </Form.Group>
 
-            {serviceDetails.previewUrl && (
-              <img src={serviceDetails.previewUrl} alt="Preview" className="img-preview" />
-            )}
-          </Form>
+              <Form.Group controlId="price">
+                <Form.Label>Price</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="price"
+                  value={styleDetails.price}
+                  onChange={(e) => handleInputChange(e, true)}
+                  placeholder="Enter price"
+                />
+              </Form.Group>
+
+              <Form.Group controlId="serviceId">
+                <Form.Label>Service</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="serviceId"
+                  value={styleDetails.serviceId}
+                  onChange={(e) => handleInputChange(e, true)}
+                >
+                  <option value="">Select a service</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.title}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+
+              <Form.Group controlId="featuredImage">
+                <Form.Label>Style Image</Form.Label>
+                <Form.Control type="file" onChange={(e) => handleImageUpload(e, true)} />
+              </Form.Group>
+
+              {styleDetails.previewUrl && (
+                <img src={styleDetails.previewUrl} alt="Preview" className="img-preview" />
+              )}
+            </Form>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-          <Button variant="primary" onClick={handleSaveService}>{editing ? 'Update' : 'Save'}</Button>
+          <Button variant="primary" onClick={activeTab === 'service' ? handleSaveService : handleSaveStyle}>
+            Save
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>
@@ -230,3 +300,4 @@ const Services = () => {
 };
 
 export default Services;
+  

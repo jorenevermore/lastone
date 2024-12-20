@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Tabs, Tab } from 'react-bootstrap';
 import { db, auth } from '../firebase';
-import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, updateDoc, getDoc, addDoc, arrayUnion, query, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { FaTrash, FaEdit, FaUserCircle, FaPlus } from 'react-icons/fa';
 import '../styles/Barbers.css';
@@ -10,10 +10,17 @@ import ToggleSwitch from './ToggleSwitch';
 const Barbers = () => {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [barberDetails, setBarberDetails] = useState({ fullName: '', contactNumber: '', address: '', email: '', available: false });
+  const [barberDetails, setBarberDetails] = useState({
+    fullName: '',
+    contactNumber: '',
+    address: '',
+    email: '',
+    available: false,
+  });
   const [barbers, setBarbers] = useState([]);
   const [selectedBarberId, setSelectedBarberId] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [barbershopDetails, setBarbershopDetails] = useState({ name: '', id: '' });
   const [deleteModal, setDeleteModal] = useState(false);
   const [barberToDelete, setBarberToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +32,7 @@ const Barbers = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        fetchBarbers(user.uid);
+        fetchBarbershopDetails(user.uid);
       } else {
         setUserId(null);
         setBarbers([]);
@@ -35,10 +42,30 @@ const Barbers = () => {
     return () => unsubscribe();
   }, []);
 
-  const fetchBarbers = async (uid) => {
+  useEffect(() => {
+    if (barbershopDetails.id) {
+      fetchBarbers(barbershopDetails.id);
+    }
+  }, [barbershopDetails]);
+
+  const fetchBarbershopDetails = async (userId) => {
     try {
-      const barberCollection = collection(doc(db, 'users', uid), 'barbersprofile');
-      const barberSnapshot = await getDocs(barberCollection);
+      const barbershopDoc = await getDoc(doc(db, 'barbershops', userId));
+      if (barbershopDoc.exists()) {
+        setBarbershopDetails({ name: barbershopDoc.data().name, id: barbershopDoc.id });
+      } else {
+        console.error('Barbershop not found');
+      }
+    } catch (error) {
+      console.error('Error fetching barbershop details: ', error);
+    }
+  };
+
+  const fetchBarbers = async (barbershopId) => {
+    try {
+      const barberCollection = collection(db, 'barbersprofile');
+      const q = query(barberCollection, where('affiliatedBarbershopId', '==', barbershopId));
+      const barberSnapshot = await getDocs(q);
       setBarbers(barberSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       console.error('Error fetching barbers: ', error);
@@ -51,15 +78,25 @@ const Barbers = () => {
   };
 
   const handleSaveBarber = async () => {
-    if (!userId) return;
     try {
-      const barberCollection = collection(doc(db, 'users', userId), 'barbersprofile');
+      const barberCollection = collection(db, 'barbersprofile');
+      const newBarber = {
+        ...barberDetails,
+        affiliatedBarbershop: barbershopDetails.name,
+        affiliatedBarbershopId: barbershopDetails.id,
+      };
+
       if (editing) {
-        await updateDoc(doc(barberCollection, selectedBarberId), barberDetails);
-        setBarbers(prev => prev.map(barber => barber.id === selectedBarberId ? { ...barber, ...barberDetails } : barber));
+        await updateDoc(doc(barberCollection, selectedBarberId), newBarber);
+        setBarbers(prev => prev.map(barber => barber.id === selectedBarberId ? { ...barber, ...newBarber } : barber));
       } else {
-        const docRef = await addDoc(barberCollection, barberDetails);
-        setBarbers(prev => [...prev, { id: docRef.id, ...barberDetails }]);
+        const docRef = await addDoc(barberCollection, newBarber);
+        newBarber.barberId = docRef.id;
+        await updateDoc(doc(barberCollection, docRef.id), { barberId: docRef.id });
+        await updateDoc(doc(db, 'barbershops', barbershopDetails.id), {
+          barbers: arrayUnion(docRef.id),
+        });
+        setBarbers(prev => [...prev, { id: docRef.id, ...newBarber }]);
       }
       closeModal();
     } catch (error) {
@@ -69,7 +106,7 @@ const Barbers = () => {
 
   const handleDeleteBarber = async () => {
     try {
-      await deleteDoc(doc(db, 'users', userId, 'barbersprofile', barberToDelete));
+      await deleteDoc(doc(db, 'barbersprofile', barberToDelete));
       setBarbers(prev => prev.filter(barber => barber.id !== barberToDelete));
       setDeleteModal(false);
     } catch (error) {
@@ -95,7 +132,13 @@ const Barbers = () => {
   };
 
   const resetForm = () => {
-    setBarberDetails({ fullName: '', contactNumber: '', address: '', email: '', available: false });
+    setBarberDetails({
+      fullName: '',
+      contactNumber: '',
+      address: '',
+      email: '',
+      available: false,
+    });
     setEditing(false);
     setSelectedBarberId(null);
   };
@@ -168,8 +211,6 @@ const Barbers = () => {
   );
 };
 
-// Extracted Components
-
 const BarberHeader = ({ searchTerm, setSearchTerm, handleAddBarber }) => (
   <div className="header-section">
     <Form.Control
@@ -205,7 +246,7 @@ const BarberTable = ({ barbers, onEditBarber, onConfirmDelete, userId, setBarber
               isAvailable={barber.available}
               onToggle={async () => {
                 const updatedAvailability = !barber.available;
-                await updateDoc(doc(db, 'users', userId, 'barbersprofile', barber.id), { available: updatedAvailability });
+                await updateDoc(doc(db, 'barbersprofile', barber.id), { available: updatedAvailability });
                 setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, available: updatedAvailability } : b));
               }}
             />

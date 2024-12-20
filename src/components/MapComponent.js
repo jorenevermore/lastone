@@ -1,16 +1,61 @@
 /* global google */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 
-const DEFAULT_LOCATION = { lat: -34.397, lng: 150.644 }; 
+const DEFAULT_LOCATION = { lat: 10.3157, lng: 123.8854 }; 
 const ZOOM_LEVEL = 15; 
 
 const MapComponent = ({ onLocationSelect }) => {
   const mapRef = useRef(null);
   const markerRef = useRef(null);
 
+  const handleMarkerDrag = useCallback((event) => {
+    const { lat, lng } = event.latLng.toJSON();
+    onLocationSelect({ lat, lng });
+  }, [onLocationSelect]);
 
-  const initializeMap = (map) => {
+  const handleMapClick = useCallback((event) => {
+    const { lat, lng } = event.latLng.toJSON();
+    if (markerRef.current) {
+      markerRef.current.setPosition({ lat, lng });
+    }
+    onLocationSelect({ lat, lng });
+  }, [onLocationSelect]);
+
+  const getUserLocation = useCallback((map) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          map.setCenter(userLocation);
+          if (markerRef.current) {
+            markerRef.current.setPosition(userLocation);
+          }
+          onLocationSelect(userLocation);
+        },
+        () => {
+          console.error('Error getting location. Using default location.');
+          map.setCenter(DEFAULT_LOCATION); 
+          if (markerRef.current) {
+            markerRef.current.setPosition(DEFAULT_LOCATION);
+          }
+          onLocationSelect(DEFAULT_LOCATION); 
+        }
+      );
+    } else {
+      console.error('Geolocation not supported by this browser. Using default location.');
+      map.setCenter(DEFAULT_LOCATION);
+      if (markerRef.current) {
+        markerRef.current.setPosition(DEFAULT_LOCATION);
+      }
+      onLocationSelect(DEFAULT_LOCATION); 
+    }
+  }, [onLocationSelect]);
+
+  const initializeMap = useCallback((map) => {
     markerRef.current = new google.maps.Marker({
       position: map.getCenter(),
       map,
@@ -21,47 +66,7 @@ const MapComponent = ({ onLocationSelect }) => {
     map.addListener('click', handleMapClick);
 
     getUserLocation(map); 
-  };
-
-
-  const handleMarkerDrag = (event) => {
-    const { lat, lng } = event.latLng.toJSON();
-    onLocationSelect({ lat, lng });
-  };
-
-  const handleMapClick = (event) => {
-    const { lat, lng } = event.latLng.toJSON();
-    markerRef.current.setPosition({ lat, lng });
-    onLocationSelect({ lat, lng });
-  };
-
-
-  const getUserLocation = (map) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          map.setCenter(userLocation);
-          markerRef.current.setPosition(userLocation);
-          onLocationSelect(userLocation);
-        },
-        () => {
-          console.error('Error getting location. Using default location.');
-          map.setCenter(DEFAULT_LOCATION); 
-          markerRef.current.setPosition(DEFAULT_LOCATION);
-          onLocationSelect(DEFAULT_LOCATION); 
-        }
-      );
-    } else {
-      console.error('Geolocation not supported by this browser. Using default location.');
-      map.setCenter(DEFAULT_LOCATION);
-      markerRef.current.setPosition(DEFAULT_LOCATION);
-      onLocationSelect(DEFAULT_LOCATION); 
-    }
-  };
+  }, [handleMarkerDrag, handleMapClick, getUserLocation]);
 
   useEffect(() => {
     const loader = new Loader({
@@ -83,7 +88,7 @@ const MapComponent = ({ onLocationSelect }) => {
         markerRef.current.setMap(null); 
       }
     };
-  }, [onLocationSelect]); 
+  }, [initializeMap]); 
 
   return (
     <div
