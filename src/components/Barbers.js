@@ -15,7 +15,7 @@ const Barbers = () => {
     contactNumber: '',
     address: '',
     email: '',
-    available: false,
+    isAvailable: false,
   });
   const [barbers, setBarbers] = useState([]);
   const [selectedBarberId, setSelectedBarberId] = useState(null);
@@ -137,7 +137,7 @@ const Barbers = () => {
       contactNumber: '',
       address: '',
       email: '',
-      available: false,
+      isAvailable: false,
     });
     setEditing(false);
     setSelectedBarberId(null);
@@ -164,7 +164,7 @@ const Barbers = () => {
     setCurrentPage(pageNumber);
   };
 
-  const availableBarbers = barbers.filter(barber => barber.available);
+  const availableBarbers = barbers.filter(barber => barber.isAvailable);
 
   return (
     <div className="barber-container">
@@ -243,11 +243,11 @@ const BarberTable = ({ barbers, onEditBarber, onConfirmDelete, userId, setBarber
         <tr key={barber.id}>
           <td>
             <ToggleSwitch
-              isAvailable={barber.available}
+              isAvailable={barber.isAvailable}
               onToggle={async () => {
-                const updatedAvailability = !barber.available;
-                await updateDoc(doc(db, 'barbersprofile', barber.id), { available: updatedAvailability });
-                setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, available: updatedAvailability } : b));
+                const updatedAvailability = !barber.isAvailable
+                await updateDoc(doc(db, 'barbersprofile', barber.id), {isAvailable: updatedAvailability });
+                setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, isAvailable: updatedAvailability } : b));
               }}
             />
           </td>
