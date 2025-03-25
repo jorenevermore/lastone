@@ -7,7 +7,7 @@ import Jorene from '../assets/jorene.jpg';
 import Ryan from '../assets/ryan.png';
 import Ryle from '../assets/ryle.jpg';
 
-// About Component for the "About" section of the website
+
 const About = () => {
   return (
     <div className="about-container">
